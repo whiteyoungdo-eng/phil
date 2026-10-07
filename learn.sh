@@ -56,7 +56,21 @@ else
   git checkout upstream/main -- journal/ 2>/dev/null || true
   # Upstream's strategy/ changes are reference material for the agent, not a
   # merge. work/ is gitignored, so this never reaches a commit.
-  git diff HEAD upstream/main -- strategy/ > work/upstream-strategy.diff || true
+  #
+  # Diff from the MERGE BASE, not from HEAD. `git diff HEAD upstream/main`
+  # also renders our own strategy/ edits as deletions, and the first learning
+  # tick duly read them as upstream having removed them (LEARN-20261007-0452,
+  # "forward-test-run paragraphs removed ... now that the ruling is settled" —
+  # upstream never had them; we added them in fd7fcf7). From the merge base
+  # the file contains upstream's changes and nothing of ours.
+  MB="$(git merge-base HEAD upstream/main)"
+  {
+    echo "# Upstream's own strategy/ changes since the common ancestor $(git rev-parse --short "$MB")."
+    echo "# Nothing in this file is yours: '-' lines are what upstream removed from the"
+    echo "# ancestor, '+' lines are what upstream added. Your own edits do not appear."
+    echo
+    git diff "$MB" upstream/main -- strategy/
+  } > work/upstream-strategy.diff || true
   if git diff --cached --quiet; then
     echo "journal/ already current with upstream $UP"
   else
