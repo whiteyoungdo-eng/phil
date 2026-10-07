@@ -4033,3 +4033,33 @@ this one does nothing useful.
 retrying every market 3x (this pass took more than 5 minutes for zero
 work). Also consider having loop.sh probe gamma once and downgrade the
 tick, so a blocked runner does not take the lease.
+
+## 2026-10-07 (operator machine): cw_return hides concentration; report ex-top-k pnl
+
+**Symptom.** `core/replay.py` reports `cw_return = roi - 1 SE` as the
+selection score. That penalises variance but it does not reveal when a
+single row is the entire result. Today's forward test of
+`strategy/policy.py` v3 (`--after 2026-09-02T00:00:00Z`, 854 held-out
+rows) returned pnl +36.91 over 97 bets, which reads as a positive month.
+One row (Gruene >=7% of second votes) pays +39.64 on its own: 107% of
+the total. Ex-top-1 the policy is -2.73, ex-top-2 it is -24.05. A
+baseline implementing only risk.json's numeric gates has the same shape
+and the same carrying row: +22.28 headline, -17.37 ex-top-1.
+
+**Effect.** Concentration has now carried a headline number three times
+on record: the two Bank of Israel rows in the v3 docstring's in-sample
+figures, and Gruene here. Each time it was caught only because somebody
+re-ran the numbers by hand with the family removed, and the v3 docstring
+had to carry a prose caveat because the tool could not state it. A
+policy can look selectable on cw_return while 95 of its 97 bets lose.
+
+**Ask (operator).** In `core/replay.py`, print `pnl_ex_top1` and
+`pnl_ex_top2` next to `pnl` in both the fold and the `--after` summaries,
+and include them in `--json`. No change to `cw_return` or to any
+threshold - this is reporting only, so no policy is re-selected by it.
+Two lines in the held-out summary dict and one in each print.
+
+**Note on scope.** `core/` is protected, so this is filed rather than
+patched. `strategy/policy.py` and `strategy/risk.json` have been updated
+in this working tree to record the forward-test result and the decision
+NOT to promote v3's thresholds on it.

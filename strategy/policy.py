@@ -43,6 +43,32 @@ Replay scores below are IN-SAMPLE. Every threshold was chosen with all
 420 settled rows visible and the policy has no fit() step, so the
 walk-forward split holds nothing out from the rule selection. The first
 out-of-sample evidence is the forecasts still open on 2026-09-02.
+
+FORWARD TEST RUN 2026-10-07 (operator machine; this is the out-of-sample
+check the paragraph above deferred). `core/replay.py --after
+2026-09-02T00:00:00Z`: 854 rows settled after the cutoff, none of them
+visible when these thresholds were chosen.
+  cw_return -0.0419   pnl +36.91   roi +0.0761   brier_delta -0.0054
+  bets 97/854   win_rate 0.67
+In-sample cw_return was +0.743. Held out it is -0.0419: the headline
+edge did not generalise. Two readings pull opposite ways.
+  (a) The return is a lottery. One row (Gruene >=7% of second votes)
+      pays +39.64, which is 107% of total pnl; ex-top-1 the policy is
+      -2.73 and ex-top-2 it is -24.05 across the remaining 95 bets.
+      This is the Bank of Israel shape recurring in an unrelated family,
+      and it is now the third headline number concentration has carried.
+  (b) Row selection does beat the market on accuracy: brier_delta
+      -0.0054 over the 97 chosen rows. That is a per-row mean, so two
+      outliers cannot manufacture it. A baseline implementing only
+      risk.json's numeric gates (min_edge 0.04, max_edge 0.10,
+      max_spread 0.06, Yes only, flat $5) scores +0.0026 on the same
+      window: 60 bets, win_rate 0.52, pnl +22.28, ex-top-1 -17.37.
+Ruling: do NOT promote these thresholds into risk.json on this evidence.
+The accuracy signal is real but has not converted into robust return.
+The comparison is also not clean - that baseline omits playbook.md's
+qualitative vetoes, so live behaviour is better than the number shown.
+Re-run this forward test once ~400 further rows have settled, and read
+cw_return next to the ex-top-1 and ex-top-2 pnl rather than alone.
 Replay (5 folds, 420 settled rows, 336 in scored folds): cw_return +0.743,
 pnl +121.68 on 19 bets, brier_delta -0.0248. 10 folds: +0.624.
 Without the Bank of Israel rows: +0.388 (5 folds) / +0.287 (10 folds),
