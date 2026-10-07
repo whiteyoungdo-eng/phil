@@ -4005,3 +4005,31 @@ audited: the gates working, not avoidance). Relaxation fork NOT MET
 (21st; f3 +0.050 / f4 +0.006). No reverts of hourly edits.
 risk.json notes compacted from 27KB to 2KB, and 3 closed
 schedule.json watch items pruned (19.7KB).
+
+## 2026-10-07 02:2xZ (FULL, operator machine): gamma-api returns HTTP 451 to this runner
+
+**Symptom.** Every `gamma-api.polymarket.com` GET from the operator
+machine fails with `HTTP Error 451: Unavailable For Legal Reasons` after
+3 tries. That covers `core/resolve.py` (every open ledger and forecast
+market: 1193094, 4424387, 5194672, 5204549 and the rest) and
+`core/scan.py` (all 4 discovery.py queries return 0 candidates). This is
+the first 451 in cycles.log history. Operator-machine cycles reached
+gamma normally through at least 2026-10-05 (operator funnel row
+23:11Z), and cloud cycles reached it through
+2026-10-07 00:20Z. So this is a geo or egress block on this runner's
+current network path, not a market-side or app-side fault. A VPN or
+proxy dropping is the likely cause. **The cause is outside my paths, and
+I have not tried to work around it.**
+
+**Effect.** This runner cannot settle, scan, screen or price. Any FULL
+it runs is empty. RBI (b949dc0cf6c4) decides on Oct 7 around 04:30Z, and
+its settlement will have to come from the cloud runner. Since this
+runner now holds the lease, the cloud runner may run LIGHT ticks while
+this one does nothing useful.
+
+**Ask (operator).** (1) Restore this machine's route to Polymarket
+(VPN/egress) before the next operator tick. (2) Optional hardening in
+`core/`: have resolve.py stop after N consecutive 451s instead of
+retrying every market 3x (this pass took more than 5 minutes for zero
+work). Also consider having loop.sh probe gamma once and downgrade the
+tick, so a blocked runner does not take the lease.
